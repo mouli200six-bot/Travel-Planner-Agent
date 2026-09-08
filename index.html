@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>India Travel Planner AI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:    #e65c00;
+      --primary-dk: #c94d00;
+      --accent:     #f9a825;
+      --bg:         #fdf8f3;
+      --surface:    #ffffff;
+      --surface2:   #fef3e2;
+      --border:     #e8d8c4;
+      --text:       #1a1208;
+      --muted:      #6b5744;
+      --bot-bg:     #fff8f0;
+      --radius:     14px;
+      --shadow:     0 2px 16px rgba(0,0,0,0.09);
+    }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-size: 15px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #e65c00 0%, #f9a825 100%);
+      color: #fff;
+      padding: 0 24px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(230,92,0,0.3);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .header-badge {
+      font-size: 0.68rem;
+      background: rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.4);
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 0 3px rgba(74,222,128,0.3);
+    }
+    .status-label { font-size: 0.78rem; opacity: 0.9; }
+
+    /* ── LAYOUT ── */
+    .app-container {
+      flex: 1;
+      display: flex;
+      max-width: 1120px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 16px;
+      gap: 20px;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 268px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+    }
+    .sidebar-card h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .dest-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dest-pill {
+      font-size: 0.77rem;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      color: var(--primary);
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    .dest-pill:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .prompt-list { display: flex; flex-direction: column; gap: 7px; }
+    .prompt-btn {
+      text-align: left;
+      font-size: 0.79rem;
+      padding: 8px 11px;
+      border-radius: 9px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      color: var(--text);
+      line-height: 1.4;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .prompt-btn:hover { background: #fde8cc; border-color: var(--primary); color: var(--primary-dk); }
+
+    .tip-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .tip-list li { font-size: 0.78rem; color: var(--muted); display: flex; gap: 6px; line-height: 1.45; }
+    .tip-icon { color: var(--accent); flex-shrink: 0; }
+
+    /* ── CHAT PANEL ── */
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: 580px;
+    }
+    .chat-header {
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface2);
+      flex-shrink: 0;
+    }
+    .chat-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg, #e65c00, #f9a825);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .chat-header-info { flex: 1; }
+    .chat-header-info .name { font-weight: 600; font-size: 0.94rem; }
+    .chat-header-info .sub  { font-size: 0.74rem; color: var(--muted); }
+    .btn-clear {
+      font-size: 0.74rem; padding: 5px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    .btn-clear:hover { background: #fde8cc; color: var(--primary); border-color: var(--primary); }
+
+    /* ── MESSAGES ── */
+    #messages {
+      flex: 1; overflow-y: auto; padding: 20px;
+      display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth;
+    }
+    #messages::-webkit-scrollbar { width: 5px; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    .message { display: flex; gap: 10px; max-width: 90%; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.bot  { align-self: flex-start; }
+
+    .msg-avatar {
+      width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    }
+    .bot  .msg-avatar { background: linear-gradient(135deg,#e65c00,#f9a825); }
+    .user .msg-avatar { background: #1a1208; color: #fff; font-size: 0.72rem; font-weight: 700; }
+
+    .msg-content { padding: 11px 15px; border-radius: 14px; font-size: 0.87rem; line-height: 1.7; }
+    .user .msg-content { background: var(--primary); color: #fff; border-bottom-right-radius: 3px; }
+    .bot  .msg-content { background: var(--bot-bg); border: 1px solid var(--border); border-bottom-left-radius: 3px; color: var(--text); }
+
+    .msg-content h3     { font-size: 0.95rem; font-weight: 700; margin: 12px 0 4px; color: var(--primary-dk); }
+    .msg-content h4     { font-size: 0.88rem; font-weight: 600; margin: 8px 0 3px; color: var(--primary); }
+    .msg-content p      { margin: 4px 0; }
+    .msg-content ul, .msg-content ol { padding-left: 20px; margin: 5px 0; }
+    .msg-content li     { margin: 3px 0; }
+    .msg-content strong { font-weight: 700; color: var(--primary-dk); }
+    .msg-content em     { font-style: italic; }
+    .msg-content hr     { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+    .msg-content code   { background: #fde8cc; padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 0.85em; }
+    .msg-content .day-header {
+      background: linear-gradient(90deg,#fde8cc,#fff8f0);
+      border-left: 3px solid var(--primary);
+      padding: 4px 10px; border-radius: 0 6px 6px 0;
+      margin: 8px 0 4px; font-weight: 600; font-size: 0.88rem; color: var(--primary-dk);
+    }
+
+    /* Typing dots */
+    .typing-indicator {
+      display: flex; align-items: center; gap: 5px; padding: 12px 16px;
+      background: var(--bot-bg); border: 1px solid var(--border);
+      border-radius: 14px; border-bottom-left-radius: 3px; width: fit-content;
+    }
+    .typing-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--primary);
+      animation: tdBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes tdBounce {
+      0%,80%,100% { transform: translateY(0); opacity: 0.6; }
+      40%          { transform: translateY(-7px); opacity: 1; }
+    }
+
+    /* Welcome card */
+    .welcome-card {
+      background: linear-gradient(135deg, #fff8f0, #fef3e2);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 24px 20px; text-align: center;
+      align-self: center; max-width: 440px; width: 100%;
+    }
+    .welcome-card .wc-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .welcome-card h2 { font-size: 1.05rem; font-weight: 700; color: var(--primary-dk); margin-bottom: 8px; }
+    .welcome-card p  { font-size: 0.83rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── INPUT AREA ── */
+    .input-area { padding: 14px 16px; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+    .input-row  { display: flex; gap: 9px; align-items: flex-end; }
+    #userInput {
+      flex: 1; border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 10px 14px; font-family: inherit; font-size: 0.88rem;
+      resize: none; max-height: 130px; min-height: 44px; line-height: 1.55;
+      color: var(--text); background: var(--bg); outline: none;
+      transition: border-color 0.18s;
+    }
+    #userInput:focus { border-color: var(--primary); background: #fff; }
+    #userInput::placeholder { color: #b09080; }
+    #sendBtn {
+      width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px;
+      border: none; background: var(--primary); color: #fff; cursor: pointer;
+      font-size: 1.15rem; display: flex; align-items: center; justify-content: center;
+      transition: background 0.18s, transform 0.1s; line-height: 1;
+    }
+    #sendBtn:hover   { background: var(--primary-dk); }
+    #sendBtn:active  { transform: scale(0.94); }
+    #sendBtn:disabled { background: #d4b8a8; cursor: not-allowed; }
+    .input-hint { font-size: 0.69rem; color: var(--muted); margin-top: 6px; text-align: center; }
+    .input-hint kbd { background: #f0e8df; border: 1px solid var(--border); padding: 1px 4px; border-radius: 3px; font-size: 0.68rem; }
+
+    /* Error bubble */
+    .error-msg .msg-content { background: #fff0f0; border-color: #f5c6c6; color: #b91c1c; }
+
+    /* Server offline banner */
+    #offlineBanner {
+      display: none;
+      background: #fff3cd;
+      border-bottom: 1px solid #ffc107;
+      color: #856404;
+      font-size: 0.82rem;
+      padding: 8px 20px;
+      text-align: center;
+    }
+    #offlineBanner.show { display: block; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center; padding: 10px; font-size: 0.71rem; color: var(--muted);
+      border-top: 1px solid var(--border); background: var(--surface);
+    }
+    footer a { color: var(--primary); text-decoration: none; }
+
+    @media (max-width: 760px) {
+      .sidebar { display: none; }
+      .app-container { padding: 10px 8px; }
+      .chat-panel { min-height: calc(100vh - 108px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-brand">
+    &#127470;&#127475; India Travel Planner AI
+    <span class="header-badge">IBM Granite-4</span>
+  </div>
+  <div class="header-right">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-label" id="statusLabel">Connecting...</span>
+  </div>
+</header>
+
+<!-- OFFLINE BANNER -->
+<div id="offlineBanner">
+  &#9888; Backend server is not running. Please start it with:
+  <strong>python app.py</strong> &mdash; then reload this page.
+</div>
+
+<!-- MAIN -->
+<div class="app-container">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <h3>&#128506; Popular Destinations</h3>
+      <div class="dest-grid" id="destPills"></div>
+    </div>
+    <div class="sidebar-card">
+      <h3>&#9889; Quick Prompts</h3>
+      <div class="prompt-list" id="quickPrompts">
+        <div style="font-size:0.78rem;color:var(--muted)">Loading...</div>
+      </div>
+    </div>
+    <div class="sidebar-card">
+      <h3>&#128161; Travel Tips</h3>
+      <ul class="tip-list">
+        <li><span class="tip-icon">&#10022;</span>Book train tickets on IRCTC 2+ weeks in advance</li>
+        <li><span class="tip-icon">&#10022;</span>Best travel months: October to March</li>
+        <li><span class="tip-icon">&#10022;</span>Carry cash (Rs.500-1000) for rural areas</li>
+        <li><span class="tip-icon">&#10022;</span>Download offline Google Maps before travelling</li>
+        <li><span class="tip-icon">&#10022;</span>Respect dress codes at temples and mosques</li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- CHAT PANEL -->
+  <main class="chat-panel">
+    <div class="chat-header">
+      <div class="chat-avatar">&#129302;</div>
+      <div class="chat-header-info">
+        <div class="name">Yatra AI &mdash; Your India Travel Expert</div>
+        <div class="sub">Powered by IBM watsonx &middot; Granite-4-h-small</div>
+      </div>
+      <button class="btn-clear" onclick="clearChat()">Clear chat</button>
+    </div>
+
+    <div id="messages">
+      <div class="welcome-card" id="welcomeCard">
+        <div class="wc-icon">&#9992;&#65039;</div>
+        <h2>Namaste! I'm Yatra, your India travel guide.</h2>
+        <p>Ask me anything &mdash; itineraries, budgets, best seasons,
+           hidden gems, food, transport, visa tips and more.<br>
+           Let's plan your dream India trip!</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea
+          id="userInput"
+          placeholder="Ask about any Indian destination... e.g. '7-day Kerala trip in October under Rs.30,000'"
+          rows="1"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button id="sendBtn" onclick="sendMessage()" title="Send">&#9658;</button>
+      </div>
+      <div class="input-hint">
+        <kbd>Enter</kbd> to send &nbsp;&middot;&nbsp; <kbd>Shift+Enter</kbd> for new line
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  India Travel Planner AI &nbsp;&middot;&nbsp;
+  Powered by <a href="https://www.ibm.com/watsonx" target="_blank" rel="noopener">IBM watsonx</a>
+  &amp; IBM Llama-3 &nbsp;&middot;&nbsp; Made for Incredible India
+</footer>
+
+<script>
+"use strict";
+
+/* ─── Config ─────────────────────────────────────────────────────────────── */
+const API = "http://localhost:5000";
+
+const DESTINATIONS = [
+  "Rajasthan","Kerala","Goa","Ladakh","Manali",
+  "Varanasi","Agra","Hampi","Coorg","Munnar",
+  "Andaman","Meghalaya","Sikkim","Rishikesh","Udaipur",
+  "Jaipur","Mumbai","Delhi","Kolkata","Ooty"
+];
+
+/* ─── State ──────────────────────────────────────────────────────────────── */
+let history   = [];
+let isLoading = false;
+
+/* ─── Status helpers ─────────────────────────────────────────────────────── */
+function setStatus(state) {
+  var dot   = document.getElementById("statusDot");
+  var label = document.getElementById("statusLabel");
+  if (state === "online") {
+    dot.style.background = "#4ade80";
+    dot.style.boxShadow  = "0 0 0 3px rgba(74,222,128,0.3)";
+    label.textContent    = "AI Online";
+    document.getElementById("offlineBanner").classList.remove("show");
+  } else if (state === "thinking") {
+    dot.style.background = "#f9a825";
+    dot.style.boxShadow  = "0 0 0 3px rgba(249,168,37,0.3)";
+    label.textContent    = "Thinking...";
+  } else {
+    dot.style.background = "#f87171";
+    dot.style.boxShadow  = "0 0 0 3px rgba(248,113,113,0.3)";
+    label.textContent    = "Offline";
+    document.getElementById("offlineBanner").classList.add("show");
+  }
+}
+
+/* ─── Build sidebar (pills + prompts loaded from API) ────────────────────── */
+(function buildPills() {
+  var box = document.getElementById("destPills");
+  DESTINATIONS.forEach(function(dest) {
+    var btn = document.createElement("button");
+    btn.className   = "dest-pill";
+    btn.textContent = dest;
+    btn.addEventListener("click", function() {
+      document.getElementById("userInput").value =
+        "Tell me about travelling to " + dest +
+        " - best time to visit, top attractions, and a 3-day sample itinerary.";
+      sendMessage();
+    });
+    box.appendChild(btn);
+  });
+})();
+
+async function loadPrompts() {
+  var box = document.getElementById("quickPrompts");
+  try {
+    var res  = await fetch(API + "/api/suggestions");
+    var data = await res.json();
+    box.innerHTML = "";
+    data.suggestions.forEach(function(p) {
+      var btn = document.createElement("button");
+      btn.className   = "prompt-btn";
+      btn.textContent = p;
+      btn.addEventListener("click", function() {
+        document.getElementById("userInput").value = p;
+        sendMessage();
+      });
+      box.appendChild(btn);
+    });
+  } catch(e) {
+    box.innerHTML = '<div style="font-size:0.78rem;color:var(--muted)">Start backend to load prompts.</div>';
+  }
+}
+
+/* ─── Textarea helpers ───────────────────────────────────────────────────── */
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 130) + "px";
+}
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+/* ─── HTML escape ────────────────────────────────────────────────────────── */
+function esc(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* ─── Markdown renderer (line-by-line, injection-safe) ───────────────────── */
+function renderMd(raw) {
+  var lines  = esc(raw).split("\n");
+  var out    = [];
+  var inList = false;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    // inline styles
+    line = line.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    line = line.replace(/\*([^*]+)\*/g,     "<em>$1</em>");
+    line = line.replace(/`([^`]+)`/g,       "<code>$1</code>");
+
+    // day header
+    if (/^Day\s+\d+[\s:\-]/i.test(line)) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      out.push('<div class="day-header">' + line + '</div>');
+      continue;
+    }
+    // headings
+    var hm = line.match(/^(#{1,4})\s+(.*)/);
+    if (hm) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      var tag = hm[1].length <= 2 ? "h3" : "h4";
+      out.push("<" + tag + ">" + hm[2] + "</" + tag + ">"); continue;
+    }
+    // hr
+    if (/^---+$/.test(line.trim())) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      out.push("<hr>"); continue;
+    }
+    // list item
+    var lm = line.match(/^[\*\-]\s+(.+)/) || line.match(/^\d+\.\s+(.+)/);
+    if (lm) {
+      if (!inList) { out.push("<ul>"); inList = true; }
+      out.push("<li>" + lm[1] + "</li>"); continue;
+    }
+    if (inList) { out.push("</ul>"); inList = false; }
+    // blank
+    if (line.trim() === "") { out.push("<p></p>"); continue; }
+    // normal
+    out.push("<p>" + line + "</p>");
+  }
+  if (inList) out.push("</ul>");
+  return out.join("\n");
+}
+
+/* ─── Append message bubble ──────────────────────────────────────────────── */
+function appendMsg(role, text, isError) {
+  var wc = document.getElementById("welcomeCard");
+  if (wc) wc.remove();
+
+  var wrap = document.createElement("div");
+  wrap.className = "message " + role + (isError ? " error-msg" : "");
+
+  var av = document.createElement("div");
+  av.className   = "msg-avatar";
+  av.textContent = role === "bot" ? "\uD83E\uDD16" : "You";
+
+  var bubble = document.createElement("div");
+  bubble.className = "msg-content";
+  bubble.innerHTML = role === "bot" ? renderMd(text) : esc(text).replace(/\n/g,"<br>");
+
+  wrap.appendChild(av);
+  wrap.appendChild(bubble);
+
+  var box = document.getElementById("messages");
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ─── Typing indicator ───────────────────────────────────────────────────── */
+function showTyping() {
+  var wc = document.getElementById("welcomeCard");
+  if (wc) wc.remove();
+
+  var wrap = document.createElement("div");
+  wrap.className = "message bot";
+  wrap.id        = "typingWrap";
+
+  var av = document.createElement("div");
+  av.className   = "msg-avatar";
+  av.textContent = "\uD83E\uDD16";
+
+  var ind = document.createElement("div");
+  ind.className = "typing-indicator";
+  ind.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+
+  wrap.appendChild(av);
+  wrap.appendChild(ind);
+  var box = document.getElementById("messages");
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+function hideTyping() {
+  var t = document.getElementById("typingWrap");
+  if (t) t.remove();
+}
+
+/* ─── Send message ───────────────────────────────────────────────────────── */
+async function sendMessage() {
+  if (isLoading) return;
+  var input = document.getElementById("userInput");
+  var text  = input.value.trim();
+  if (!text) return;
+
+  isLoading = true;
+  input.value = "";
+  input.style.height = "auto";
+  document.getElementById("sendBtn").disabled = true;
+  setStatus("thinking");
+
+  history.push({ role: "user", content: text });
+  appendMsg("user", text);
+  showTyping();
+
+  try {
+    var res = await fetch(API + "/api/chat", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ messages: history })
+    });
+
+    var data;
+    try { data = await res.json(); }
+    catch(e) { throw new Error("Server returned an unexpected response (status " + res.status + ")."); }
+
+    hideTyping();
+
+    if (!res.ok || data.error) {
+      history.pop();
+      appendMsg("bot", "Error: " + (data.error || "HTTP " + res.status) +
+        (data.detail ? "\n\nDetail: " + JSON.stringify(data.detail) : ""), true);
+      setStatus("online");
+    } else {
+      history.push({ role: "assistant", content: data.reply });
+      appendMsg("bot", data.reply);
+      setStatus("online");
+    }
+
+  } catch(err) {
+    hideTyping();
+    history.pop();
+    appendMsg("bot",
+      "Cannot reach the server at " + API + ".\n\n" +
+      "Make sure the backend is running:\n  python app.py\n\nThen reload this page.",
+      true);
+    setStatus("offline");
+  }
+
+  isLoading = false;
+  document.getElementById("sendBtn").disabled = false;
+  input.focus();
+}
+
+/* ─── Clear chat ─────────────────────────────────────────────────────────── */
+function clearChat() {
+  history = [];
+  var box = document.getElementById("messages");
+  box.innerHTML = "";
+  var wc = document.createElement("div");
+  wc.className = "welcome-card";
+  wc.id        = "welcomeCard";
+  wc.innerHTML =
+    '<div class="wc-icon">&#9992;&#65039;</div>' +
+    "<h2>Namaste! I'm Yatra, your India travel guide.</h2>" +
+    "<p>Ask me anything &mdash; itineraries, budgets, best seasons, " +
+    "hidden gems, food, transport, visa tips and more.<br>" +
+    "Let's plan your dream India trip!</p>";
+  box.appendChild(wc);
+  setStatus("online");
+}
+
+/* ─── Init: health check + load prompts ─────────────────────────────────── */
+(async function init() {
+  try {
+    var res = await fetch(API + "/api/health");
+    if (res.ok) {
+      setStatus("online");
+      loadPrompts();
+    } else {
+      setStatus("offline");
+    }
+  } catch(e) {
+    setStatus("offline");
+    document.getElementById("quickPrompts").innerHTML =
+      '<div style="font-size:0.78rem;color:var(--muted)">Start backend to load prompts.</div>';
+  }
+})();
+</script>
+</body>
+</html>
